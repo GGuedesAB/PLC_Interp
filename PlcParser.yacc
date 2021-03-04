@@ -26,8 +26,8 @@
          Cond_expr of expr |
          Decl of expr |
          Args of plcType |
-         Params of plcType |
-         Typed_var of plcType |
+         Typed_var of plcType * string |
+         Params of (plcType * string) list |
          Atomic_type of plcType |
          Type of plcType |
          Types of plcType |
@@ -51,10 +51,10 @@
 
 %%
 
-Prog : Expr (Expr) |
+(*Prog : Expr (Expr) |
        Decl T_SEMICOLON Prog (Decl)
 
-Decl : T_VAR NAME T_EQUAL Expr (Let(NAME, )) |
+Decl : T_VAR NAME T_EQUAL Expr () |
        T_FUN NAME Args T_EQUAL Expr () |
        T_FUN T_REC NAME Args T_COLON Type T_EQUAL Expr ()
 
@@ -101,28 +101,28 @@ Comps : Expr T_COMMA Expr (Expr1, Expr2) |
         Expr T_COMMA Comps (Expr, Comps)
 
 Match_expr : T_END () |
-             T_PIPE Cond_expr T_MINUS_ARROW Expr Match_expr (Cond_expr, Expr; Match_expr)
+             T_PIPE Cond_expr T_MINUS_ARROW Expr Match_expr (Cond_expr, Expr)
 
 Cond_expr : Expr (Some Expr) |
             T_UNDERSCORE (None)
 
 Args : T_OPEN_PAR T_CLOSE_PAR (List []) |
-       T_OPEN_PAR Params T_CLOSE_PAR (List [Params])
+       T_OPEN_PAR Params T_CLOSE_PAR (List [Params])*)
 
-Params : Typed_var (Typed_var) |
-         Typed_var T_COMMA Params (Typed_var, Params)
+Params : Typed_var ([Typed_var]) |
+         Typed_var T_COMMA Params (Params @ [Typed_var])
 
-Typed_var : Type NAME (Type, NAME)
+Typed_var : Type NAME ((Type, NAME))
 
-Atomic_type : T_NIL (List []) |
-              T_BOOL (BoolT) |
-              T_INT (IntT) |
-              T_OPEN_PAR Type T_CLOSE_PAR ()
+Types : Type T_COMMA Type (Type1; Type2) |
+        Type T_COMMA Types (Type; Types)
 
 Type : Atomic_type (Atomic_type) |
        T_OPEN_PAR Types T_CLOSE_PAR (ListT[Types]) |
        T_OPEN_BRACES Type T_CLOSE_BRACES (SeqT Type) |
        Type T_MINUS_ARROW Type (FunT (Type1, Type2))
 
-Types : Type T_COMMA Type (Type1, Type2) |
-        Type T_COMMA Types (Type, Types)
+Atomic_type : T_NIL (ListT []) |
+              T_BOOL (BoolT) |
+              T_INT (IntT) |
+              T_OPEN_PAR Type T_CLOSE_PAR (Type)
