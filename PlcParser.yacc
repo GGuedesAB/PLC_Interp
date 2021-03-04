@@ -30,7 +30,7 @@
          Params of (plcType * string) list |
          Atomic_type of plcType |
          Type of plcType |
-         Types of plcType |
+         Types of plcType list |
          Const of plcVal |
          Comps of expr
 
@@ -114,11 +114,11 @@ Params : Typed_var ([Typed_var]) |
 
 Typed_var : Type NAME ((Type, NAME))
 
-Types : Type T_COMMA Type (Type1; Type2) |
-        Type T_COMMA Types (Type; Types)
+Types : Type T_COMMA Type ([Type1, Type2]) |
+        Type T_COMMA Types (Types @ [Type])
 
 Type : Atomic_type (Atomic_type) |
-       T_OPEN_PAR Types T_CLOSE_PAR (ListT[Types]) |
+       T_OPEN_PAR Types T_CLOSE_PAR (ListT Types) |
        T_OPEN_BRACES Type T_CLOSE_BRACES (SeqT Type) |
        Type T_MINUS_ARROW Type (FunT (Type1, Type2))
 
