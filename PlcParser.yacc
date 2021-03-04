@@ -1,3 +1,26 @@
+exception notList;
+exception notTuple;
+
+fun lHd l =
+    case l of
+        List l => hd l
+       | _ => raise notList
+
+fun lTl l =
+    case l of
+        List l => hd (tl l)
+       | _ => raise notList
+
+fun getFirst e =
+    case e of
+        TypedVar e => #1 e
+       | _ => raise notTuple
+
+fun getSecond e =
+    case e of
+        TypedVar e => #2 e
+       | _ => raise notTuple
+
 %%
 
 %name PlcParser
@@ -25,14 +48,14 @@
          Match_expr of expr |
          Cond_expr of expr |
          Decl of expr |
-         Args of plcType |
-         Typed_var of plcType * string |
-         Params of (plcType * string) list |
+         Args of expr |
+         Typed_var of expr |
+         Params of expr list |
          Atomic_type of plcType |
          Type of plcType |
          Types of plcType list |
-         Const of plcVal |
-         Comps of expr
+         Const of expr |
+         Comps of expr list
 
 
 %right T_SEMICOLON T_MINUS_ARROW T_CONCAT_DC
@@ -58,6 +81,12 @@ Decl : T_VAR NAME T_EQUAL Expr () |
        T_FUN NAME Args T_EQUAL Expr () |
        T_FUN T_REC NAME Args T_COLON Type T_EQUAL Expr ()
 
+Match_expr : T_END () |
+             T_PIPE Cond_expr T_MINUS_ARROW Expr Match_expr (Cond_expr, Expr)
+
+Cond_expr : Expr (Some Expr) |
+            T_UNDERSCORE (None)
+
 Expr : Atomic_expr () |
        App_expr () |
        T_IF Expr T_THEN Expr T_ELSE Expr () |
@@ -81,38 +110,32 @@ Expr : Atomic_expr () |
        Expr T_SEMICOLON Expr () |
        Expr T_OPEN_BRACES NAT T_CLOSE_BRACES ()
 
-Atomic_expr : Const () |
-              NAME () |
-              T_OPEN_KEYS Prog T_CLOSE_KEYS () |
-              T_OPEN_PAR Expr T_CLOSE_PAR () |
-              T_OPEN_PAR Comps T_CLOSE_PAR () |
-              T_FN Args T_EQUAL_ARROW Expr T_END ()
-
 App_expr : Atomic_expr Atomic_expr () |
-           App_expr Atomic_expr ()
+           App_expr Atomic_expr () *)
+
+Atomic_expr : Const (Const) |
+              NAME (Var NAME) |
+              (* T_OPEN_KEYS Prog T_CLOSE_KEYS (Prog) | *)
+              T_OPEN_PAR Expr T_CLOSE_PAR (Expr) |
+              T_OPEN_PAR Comps T_CLOSE_PAR (List Comps) |
+              T_FN Args T_EQUAL_ARROW Expr T_END (Anon (getFirst(lHd(Args)), getSecond(lTl(Args)), Expr))
 
 Const : T_TRUE (ConB true) |
         T_FALSE (ConB false) |
         NAT (ConI NAT) |
         T_OPEN_PAR T_CLOSE_PAR (List []) |
-        T_OPEN_PAR Type T_OPEN_BRACES T_CLOSE_BRACES T_CLOSE_PAR (ESeq [SeqT Type])
+        T_OPEN_PAR Type T_OPEN_BRACES T_CLOSE_BRACES T_CLOSE_PAR (ESeq Type)
 
-Comps : Expr T_COMMA Expr (Expr1, Expr2) |
-        Expr T_COMMA Comps (Expr, Comps)
-
-Match_expr : T_END () |
-             T_PIPE Cond_expr T_MINUS_ARROW Expr Match_expr (Cond_expr, Expr)
-
-Cond_expr : Expr (Some Expr) |
-            T_UNDERSCORE (None)
+Comps : Expr T_COMMA Expr ([Expr1, Expr2]) |
+        Expr T_COMMA Comps (Comps @ [Expr])
 
 Args : T_OPEN_PAR T_CLOSE_PAR (List []) |
-       T_OPEN_PAR Params T_CLOSE_PAR (List [Params])*)
+       T_OPEN_PAR Params T_CLOSE_PAR (List Params)
 
 Params : Typed_var ([Typed_var]) |
          Typed_var T_COMMA Params (Params @ [Typed_var])
 
-Typed_var : Type NAME ((Type, NAME))
+Typed_var : Type NAME (TypedVar (Type, NAME))
 
 Types : Type T_COMMA Type ([Type1, Type2]) |
         Type T_COMMA Types (Types @ [Type])
