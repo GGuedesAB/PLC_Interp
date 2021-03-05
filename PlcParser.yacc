@@ -1,24 +1,28 @@
 exception notList;
 exception notTuple;
 
+datatype TypeName =
+    TypeNameTup of plcType * string
+    | TypeNameTupList of TypeName list
+
 fun lHd l =
     case l of
-        List l => hd l
+        TypeNameTupList l => hd l
        | _ => raise notList
 
 fun lTl l =
     case l of
-        List l => hd (tl l)
+        TypeNameTupList l => hd (tl l)
        | _ => raise notList
 
 fun getFirst e =
     case e of
-        TypedVar e => #1 e
+        TypeNameTup e => #1 e
        | _ => raise notTuple
 
 fun getSecond e =
     case e of
-        TypedVar e => #2 e
+        TypeNameTup e => #2 e
        | _ => raise notTuple
 
 %%
@@ -48,9 +52,9 @@ fun getSecond e =
          Match_expr of expr |
          Cond_expr of expr |
          Decl of expr |
-         Args of expr |
-         Typed_var of expr |
-         Params of expr list |
+         Args of TypeName |
+         Typed_var of TypeName |
+         Params of TypeName list |
          Atomic_type of plcType |
          Type of plcType |
          Types of plcType list |
@@ -129,13 +133,13 @@ Const : T_TRUE (ConB true) |
 Comps : Expr T_COMMA Expr ([Expr1, Expr2]) |
         Expr T_COMMA Comps (Comps @ [Expr])
 
-Args : T_OPEN_PAR T_CLOSE_PAR (List []) |
-       T_OPEN_PAR Params T_CLOSE_PAR (List Params)
+Args : T_OPEN_PAR T_CLOSE_PAR (TypeNameTupList []) |
+       T_OPEN_PAR Params T_CLOSE_PAR (TypeNameTupList Params)
 
 Params : Typed_var ([Typed_var]) |
          Typed_var T_COMMA Params (Params @ [Typed_var])
 
-Typed_var : Type NAME (TypedVar (Type, NAME))
+Typed_var : Type NAME (TypeNameTup (Type, NAME))
 
 Types : Type T_COMMA Type ([Type1, Type2]) |
         Type T_COMMA Types (Types @ [Type])
