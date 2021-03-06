@@ -74,14 +74,13 @@ fun resolve (decl, prog) =
          Const of expr |
          Comps of expr list
 
-
-%right T_SEMICOLON T_MINUS_ARROW T_CONCAT_DC
-
-%left T_ELSE T_AND_DCE T_EQUAL T_DIFF T_SMALLER T_SMALLER_EQUAL T_PLUS T_MINUS T_MUL T_DIV T_OPEN_BRACES
-
+%right T_SEMICOLON T_MINUS_ARROW
+%nonassoc T_IF 
+%left T_ELSE T_AND_DCE T_EQUAL T_DIFF T_SMALLER T_SMALLER_EQUAL
+%right T_CONCAT_DC
+%left T_PLUS T_MINUS T_MUL T_DIV
 %nonassoc T_EXCL T_HD T_TL T_ISE T_PRINT NAME
-
-%left
+%left T_OPEN_BRACES
 
 %eop EOF
 
