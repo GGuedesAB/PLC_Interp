@@ -21,7 +21,6 @@ datatype expr =
   | Call of expr * expr
   | List of expr list
   | Item of int * expr
-  | TypedVar of plcType * string
   | Anon of plcType * string * expr;
 
 
