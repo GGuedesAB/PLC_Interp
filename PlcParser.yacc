@@ -1,29 +1,42 @@
-exception notList;
+(* exception notList;
 exception notTuple;
+exception notDecl;
 
 datatype TypeName =
-    TypeNameTup of plcType * string
-    | TypeNameTupList of TypeName list
+    TypeNameDouble of plcType * string
+    | TypeNameList of TypeName list
 
 fun lHd l =
     case l of
-        TypeNameTupList l => hd l
+        TypeNameList myL => hd myL
        | _ => raise notList
 
 fun lTl l =
     case l of
-        TypeNameTupList l => hd (tl l)
+        TypeNameList myL => hd (tl myL)
        | _ => raise notList
 
 fun getFirst e =
     case e of
-        TypeNameTup e => #1 e
+        TypeNameDouble tnd => #1 tnd
        | _ => raise notTuple
 
 fun getSecond e =
     case e of
-        TypeNameTup e => #2 e
-       | _ => raise notTuple
+        TypeNameDouble tnd => #2 tnd
+       | _ => raise notTuple *)
+
+datatype DeclType =
+    VarDecl of string * expr
+    | FunDecl of string * expr
+    | FunrecDecl of string * (plcType * string) list * plcType * expr
+
+fun resolve (decl, prog) =
+    case decl of
+         VarDecl v => Let (#1v, #2v, prog)
+       | FunDecl f => Let (#1f, #2f, prog)
+       | FunrecDecl fr => makeFun (#1fr, #2fr, #3fr, #4fr, prog)
+
 
 %%
 
@@ -46,15 +59,15 @@ fun getSecond e =
       EOF
 
 %nonterm Prog of expr |
+         Decl of DeclType |
          Expr of expr |
-         Atomic_expr of expr |
          App_expr of expr |
-         Match_expr of expr |
-         Cond_expr of expr |
-         Decl of expr |
-         Args of TypeName |
-         Typed_var of TypeName |
-         Params of TypeName list |
+         Atomic_expr of expr |
+         Match_expr of (expr option * expr) list |
+         Cond_expr of expr option |
+         Args of (plcType * string) list |
+         Typed_var of plcType * string |
+         Params of (plcType * string) list |
          Atomic_type of plcType |
          Type of plcType |
          Types of plcType list |
@@ -78,51 +91,51 @@ fun getSecond e =
 
 %%
 
-(*Prog : Expr (Expr) |
-       Decl T_SEMICOLON Prog (Decl)
+Prog : Expr (Expr) |
+       Decl T_SEMICOLON Prog (resolve (Decl, Prog))
 
-Decl : T_VAR NAME T_EQUAL Expr () |
-       T_FUN NAME Args T_EQUAL Expr () |
-       T_FUN T_REC NAME Args T_COLON Type T_EQUAL Expr ()
+Decl : T_VAR NAME T_EQUAL Expr (VarDecl(NAME, Expr)) |
+       T_FUN NAME Args T_EQUAL Expr (FunDecl(NAME, makeAnon(Args, Expr))) |
+       T_FUN T_REC NAME Args T_COLON Type T_EQUAL Expr (FunrecDecl(NAME, Args, Type, Expr))
 
-Match_expr : T_END () |
-             T_PIPE Cond_expr T_MINUS_ARROW Expr Match_expr (Cond_expr, Expr)
+Match_expr : T_END ([]) |
+             T_PIPE Cond_expr T_MINUS_ARROW Expr Match_expr ([(Cond_expr, Expr)] @ Match_expr)
 
-Cond_expr : Expr (Some Expr) |
-            T_UNDERSCORE (None)
+Cond_expr : Expr (SOME Expr) |
+            T_UNDERSCORE (NONE)
 
-Expr : Atomic_expr () |
-       App_expr () |
-       T_IF Expr T_THEN Expr T_ELSE Expr () |
-       T_MATCH Expr T_WITH Match_expr () |
-       T_EXCL Expr () |
-       T_MINUS Expr () |
-       T_HD Expr () |
-       T_TL Expr () |
-       T_ISE Expr () |
-       T_PRINT Expr () |
-       Expr T_AND_DCE Expr () |
-       Expr T_PLUS Expr () |
-       Expr T_MINUS Expr () |
-       Expr T_MUL Expr () |
-       Expr T_DIV Expr () |
-       Expr T_EQUAL Expr () |
-       Expr T_DIFF Expr () |
-       Expr T_SMALLER Expr () |
-       Expr T_SMALLER_EQUAL Expr () |
-       Expr T_CONCAT_DC Expr () |
-       Expr T_SEMICOLON Expr () |
-       Expr T_OPEN_BRACES NAT T_CLOSE_BRACES ()
+Expr : Atomic_expr (Atomic_expr) |
+       App_expr (App_expr) |
+       T_IF Expr T_THEN Expr T_ELSE Expr (If (Expr1, Expr2, Expr3)) |
+       T_MATCH Expr T_WITH Match_expr (Match(Expr, Match_expr)) |
+       T_EXCL Expr (Prim1("!", Expr)) |
+       T_MINUS Expr (Prim1("-", Expr)) |
+       T_HD Expr (Prim1("hd", Expr)) |
+       T_TL Expr (Prim1("tl", Expr)) |
+       T_ISE Expr (Prim1("ise", Expr)) |
+       T_PRINT Expr (Prim1("print", Expr)) |
+       Expr T_AND_DCE Expr (Prim2("&&", Expr1, Expr2)) |
+       Expr T_PLUS Expr (Prim2("+", Expr1, Expr2)) |
+       Expr T_MINUS Expr (Prim2("-", Expr1, Expr2)) |
+       Expr T_MUL Expr (Prim2("*", Expr1, Expr2)) |
+       Expr T_DIV Expr (Prim2("/", Expr1, Expr2)) |
+       Expr T_EQUAL Expr (Prim2("=", Expr1, Expr2)) |
+       Expr T_DIFF Expr (Prim2("!=", Expr1, Expr2)) |
+       Expr T_SMALLER Expr (Prim2("<", Expr1, Expr2)) |
+       Expr T_SMALLER_EQUAL Expr (Prim2("<=", Expr1, Expr2)) |
+       Expr T_CONCAT_DC Expr (Prim2("::", Expr1, Expr2)) |
+       Expr T_SEMICOLON Expr (Prim2(";", Expr1, Expr2)) |
+       Expr T_OPEN_BRACES NAT T_CLOSE_BRACES (Item(NAT, Expr))
 
-App_expr : Atomic_expr Atomic_expr () |
-           App_expr Atomic_expr () *)
+App_expr : Atomic_expr Atomic_expr (Call(Atomic_expr1, Atomic_expr2)) |
+           App_expr Atomic_expr (Call(App_expr, Atomic_expr))
 
 Atomic_expr : Const (Const) |
               NAME (Var NAME) |
-              (* T_OPEN_KEYS Prog T_CLOSE_KEYS (Prog) | *)
+              T_OPEN_KEYS Prog T_CLOSE_KEYS (Prog) |
               T_OPEN_PAR Expr T_CLOSE_PAR (Expr) |
               T_OPEN_PAR Comps T_CLOSE_PAR (List Comps) |
-              T_FN Args T_EQUAL_ARROW Expr T_END (Anon (getFirst(lHd(Args)), getSecond(lTl(Args)), Expr))
+              T_FN Args T_EQUAL_ARROW Expr T_END (makeAnon(Args, Expr))
 
 Const : T_TRUE (ConB true) |
         T_FALSE (ConB false) |
@@ -131,18 +144,18 @@ Const : T_TRUE (ConB true) |
         T_OPEN_PAR Type T_OPEN_BRACES T_CLOSE_BRACES T_CLOSE_PAR (ESeq Type)
 
 Comps : Expr T_COMMA Expr ([Expr1, Expr2]) |
-        Expr T_COMMA Comps (Comps @ [Expr])
+        Expr T_COMMA Comps ([Expr] @ Comps)
 
-Args : T_OPEN_PAR T_CLOSE_PAR (TypeNameTupList []) |
-       T_OPEN_PAR Params T_CLOSE_PAR (TypeNameTupList Params)
+Args : T_OPEN_PAR T_CLOSE_PAR ([]) |
+       T_OPEN_PAR Params T_CLOSE_PAR (Params)
 
 Params : Typed_var ([Typed_var]) |
-         Typed_var T_COMMA Params (Params @ [Typed_var])
+         Typed_var T_COMMA Params ([Typed_var] @ Params)
 
-Typed_var : Type NAME (TypeNameTup (Type, NAME))
+Typed_var : Type NAME ((Type, NAME))
 
 Types : Type T_COMMA Type ([Type1, Type2]) |
-        Type T_COMMA Types (Types @ [Type])
+        Type T_COMMA Types ([Type] @ Types)
 
 Type : Atomic_type (Atomic_type) |
        T_OPEN_PAR Types T_CLOSE_PAR (ListT Types) |
