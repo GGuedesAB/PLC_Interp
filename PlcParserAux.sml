@@ -1,12 +1,24 @@
 (* Plc Parser Aux *)
+exception invalidArgC;
+
+fun unrollTypes (args: (plcType * string) list) : plcType list =
+  case args of
+      x::xt => [#1x] @ unrollTypes xt
+    | [] => []
 
 (* Creat the body of a function expression. *)
 fun makeFunAux (n: int, xs: (plcType * string) list, e: expr): expr =
-    e (* TODO *)
+  case xs of
+    x::xt => Let(#2x, Item(n, Var "$list"), makeFunAux (n+1, xt, e))
+    | [] => e
 
 (* Create the list of arguments of a function. *)
 fun makeType (args: (plcType * string) list): plcType =
-    ListT [] (* TODO *)
+  let
+    val typeList = unrollTypes (args)
+  in
+    ListT typeList
+  end
 
 (* Create a function expression. *)
 fun makeFun (f: string, xs: (plcType * string) list, rt: plcType, e1: expr, e2: expr): expr =
