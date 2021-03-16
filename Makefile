@@ -11,5 +11,8 @@ grammar: PlcParser.yacc
 all: testParser.sml lexer grammar
 	$(SML) $<
 
+interp: PlcInterp.sml lexer grammar
+	$(SML) $<
+
 clean:
 	rm -f PlcLexer.lex.sml PlcParser.yacc.sig PlcParser.yacc.sml
