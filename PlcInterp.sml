@@ -26,23 +26,22 @@ exception NotAFunc
 
 fun eval (ConI i) _ = IntV i
   | eval (ConB b) _ = BoolV b
-  | eval (ESeq e) env = SeqV []
-  | eval (Var v) env = (lookup env v)
-  | eval (Item i) env =
-    let in
-      if #1 i = 1 then
-        case #2 i of
-            List [] => raise Impossible
-          | List l => eval (hd l) env
-          | _ => raise Impossible
-      else
-        case #2 i of
-            List [] => raise Impossible
-          | List l => eval (Item ((#1 i) - 1, List(tl l))) env
-          | _ => raise Impossible
+  | eval (ESeq e) _ = SeqV []
+  | eval (Var v) (env:plcVal env) = (lookup env v)
+  | eval (Item (index, exp)) (env:plcVal env) =
+    let
+      fun getElementI (index, []) = raise Impossible
+        | getElementI (index, (x::[])) = if index = 1 then x else raise Impossible
+        | getElementI (index, (x::xs)) = if index = 1 then x else getElementI (index - 1, xs)
+      val value = eval exp env
+    in
+      case value of
+          ListV l => getElementI (index, l)
+        | SeqV s => getElementI (index, s)
+        | _ => raise Impossible
     end
-  | eval (List []) env = ListV []
-  | eval (List l) env = 
+  | eval (List []) (env:plcVal env) = ListV []
+  | eval (List l) (env:plcVal env) = 
     let
       fun unroll (x::[]) = eval x env :: []
         | unroll (x::xs) = eval x env :: unroll xs
@@ -50,14 +49,14 @@ fun eval (ConI i) _ = IntV i
     in
       ListV (unroll l)
     end
-  | eval (If (exp1, exp2, exp3)) env = 
+  | eval (If (exp1, exp2, exp3)) (env:plcVal env) = 
     let in
       case eval exp1 env of 
           BoolV true => eval exp2 env
         | BoolV false => eval exp3 env
         | _ => raise Impossible
     end
-  | eval (Match (exp1, matchList)) env = 
+  | eval (Match (exp1, matchList)) (env:plcVal env) = 
     let 
       val evalMatchVar = eval exp1 env 
       (* Try matches will return the "cond -> expr" for which cond matches exp1 *)
@@ -76,13 +75,7 @@ fun eval (ConI i) _ = IntV i
     in
       eval (tryMatches (evalMatchVar, matchList) env) env
     end
-  | eval (Let (var, exp1, exp2)) env =
-    let
-      val nEnv = (var, eval exp1 env) :: env
-    in
-      eval exp2 nEnv
-    end
-  | eval (Prim1 (oper, exp)) env =
+  | eval (Prim1 (oper, exp)) (env:plcVal env) =
     let
       val v = eval exp env
     in
@@ -116,8 +109,8 @@ fun eval (ConI i) _ = IntV i
         | SeqV s =>
           let in
             case oper of
-                "hd" => hd s
-              | "tl" => SeqV (tl s)
+                "hd" => let in let in hd s end handle Empty => raise HDEmptySeq end
+              | "tl" => let in let in SeqV (tl s) end handle Empty => raise TLEmptySeq end
               | "ise" =>
                 let in
                   case s of
@@ -132,9 +125,20 @@ fun eval (ConI i) _ = IntV i
                 end
               | _ => raise Impossible
           end
+        | ListV l =>
+          let in
+            case oper of
+                "print" => 
+                let 
+                  val ignore = print(list2string(val2string, l) ^ "\n")
+                in
+                  ListV []
+                end
+              | _ => raise Impossible
+          end
         | _ => raise Impossible
     end
-  | eval (Prim2 (oper, exp1, exp2)) env =
+  | eval (Prim2 (oper, exp1, exp2)) (env:plcVal env) =
     if oper = ";" then
       let
         val ignore = eval exp1 env
@@ -196,46 +200,35 @@ fun eval (ConI i) _ = IntV i
             end
           | _ => raise Impossible
       end
-  | eval (Letrec lr) env = IntV 0
-  | eval (Call c) env = IntV 1
-  | eval (Anon a) env = IntV 2;
-
-(* eval (fromString "15") [];
-eval (fromString "true") [];
-eval (fromString "()") [];
-eval (fromString "(6,false)[1]") [];
-eval (fromString "([Bool] [])") [];
-eval (fromString "print x; true") [("x", BoolV false)];
-eval (fromString "3::7::t") [("t", IntV 19)];
-eval (fromString "fn (Int x) => -x end") [];
-eval (fromString "var x = 9; x + 3") [];
-eval (fromString "fun f(Int x) = x; f(1)") [];
-eval (fromString "(x, y, z)[1]") [("x", IntV 5), ("y", IntV 10), ("z", IntV 15)];
-eval (fromString "(x, y, z)[2]") [("x", IntV 5), ("y", IntV 10), ("z", IntV 15)];
-eval (fromString "(x, y, z)[3]") [("x", IntV 5), ("y", IntV 10), ("z", IntV 15)];
-eval (fromString "print 5") [];
-eval (fromString "-5") [];
-eval (fromString "-x") [("x", IntV 8)];
-eval (fromString "true && false") [];
-eval (fromString "true && true") [];
-eval (fromString "5 + 5") [];
-eval (fromString "print y; print x") [("x", IntV 3), ("y", IntV 9)];
-eval (fromString "print x") [("x", IntV 3)];
-eval (fromString "print y; x + 8") [("x", IntV 3), ("y", IntV 9)];
-eval (fromString "1::2") [];
-eval (fromString "1::2::3::4") [];
-eval (fromString "(1,2)::(2,3)::(3,4)::(4,5)") [];
-eval (fromString "x::y") [("x", IntV 10), ("y", IntV 9)];
-eval (fromString "x::y::z") [("x", IntV 10), ("y", IntV 9), ("z", IntV 8)];
-
-eval (fromString "x::y::z::w") [("x", IntV 10), ("y", IntV 9), ("z", IntV 8), ("w", IntV 7)];
-
-eval (fromString "if 5 = 5 then 8 + 3 else 8 - 3") [];
-eval (fromString "if x = z then y + 7 else w + 7") [("x", IntV 10), ("y", IntV 9), ("z", IntV 8), ("w", IntV 7)];
-eval (fromString "if x = z then y + 7 else w + 7") [("x", IntV 10), ("y", IntV 9), ("z", IntV 10), ("w", IntV 7)];
-eval (fromString "match x with | 0 -> 1| _ -> -1 end") [("x", IntV 3)];
-eval (fromString "match x with | 0 -> 1| _ -> -1 end") [("x", IntV 0)];
-
-eval (fromString "var x = 3; if x < 2 then x else y") [("y", IntV 9)];
-eval (fromString "var x = 3; if x < 4 then x else y") [("y", IntV 9)];
-eval (fromString "var x = 1::2::3::4; print x") []; *)
+  | eval (Let (var, exp1, exp2)) (env:plcVal env) =
+    let
+      val nEnv = (var, eval exp1 env) :: env
+    in
+      eval exp2 nEnv
+    end
+  | eval (Anon (typ, arg, exp)) (env:plcVal env) = Clos ("", arg, exp, env) (* We need to check if var can be found in the env of Anon *)
+  | eval (Call (exp1, exp2)) (env:plcVal env) = 
+    let
+      fun mountArguments (List (x::[])) = [eval x env]
+        | mountArguments (List (x::xs)) = [eval x env] @ mountArguments (List xs)
+        | mountArguments (exp) = [eval exp env]
+      val nEnv = [("$list", ListV (mountArguments exp2))] @ env
+      val f = eval exp1 env
+    in
+      case f of
+          Clos(name, var, exp, cEnv) =>
+            let
+              val ev = eval exp2 nEnv
+              val fEnv = (var, ev)::(name, f)::cEnv
+            in
+              eval exp fEnv
+            end
+        | _ => raise NotAFunc
+    end
+  | eval (Letrec (fName, argTyp, arg, funTyp, exp1, exp2)) (env:plcVal env) =
+    let
+      val nEnv = (fName, Clos(fName, arg, exp1, env)) :: env
+    in
+      eval exp2 nEnv
+    end
+  ;
