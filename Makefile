@@ -8,10 +8,7 @@ lexer: PlcLexer.lex
 grammar: PlcParser.yacc
 	$(YACC) $<
 
-all: testParser.sml lexer grammar
-	$(SML) $<
-
-interp: PlcInterp.sml lexer grammar
+all: Plc.sml lexer grammar
 	$(SML) $<
 
 clean:
