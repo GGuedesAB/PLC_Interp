@@ -8,6 +8,12 @@ lexer: PlcLexer.lex
 grammar: PlcParser.yacc
 	$(YACC) $<
 
+interpTest: InterpTests.sml Plc.sml lexer grammar
+	$(SML) < $<
+
+checkerTest: CheckTests.sml Plc.sml lexer grammar
+	$(SML) < $<
+
 all: Plc.sml lexer grammar
 	$(SML) $<
 
