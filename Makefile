@@ -14,6 +14,9 @@ interpTest: InterpTests.sml Plc.sml lexer grammar
 checkerTest: CheckTests.sml Plc.sml lexer grammar
 	$(SML) < $<
 
+test: testParser.sml lexer grammar
+	$(SML) < $<
+
 all: Plc.sml lexer grammar
 	$(SML) $<
 
