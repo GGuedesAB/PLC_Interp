@@ -144,7 +144,6 @@ fun eval (ConI i) _ = IntV i
                 | "<=" => BoolV (i1 <= i2)
                 | "=" => BoolV (i1 = i2)
                 | "!=" => BoolV (i1 <> i2)
-                (* | "::" => SeqV (IntV i1 :: IntV i2 :: []) *)
                 | _ => raise Impossible
             end
           | (BoolV b1, BoolV b2) => 
@@ -153,15 +152,8 @@ fun eval (ConI i) _ = IntV i
                   "&&" => BoolV (b1 andalso b2)
                 | "=" => BoolV (b1 = b2)
                 | "!=" => BoolV (b1 <> b2)
-                (* | "::" => SeqV (BoolV b1 :: BoolV b2 :: []) *)
                 | _ => raise Impossible
             end
-          (* | (ListV l1, ListV l2) => 
-            let in
-              case oper of
-                  "::" => SeqV (ListV l1 :: ListV l2 :: [])
-                | _ => raise Impossible
-            end *)
           | (IntV i1, SeqV s2) => 
             let in
               case oper of
