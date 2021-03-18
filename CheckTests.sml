@@ -52,6 +52,12 @@ in
 end handle UnknownType => print ("INFO: Expected exception. Can't use :: without a list as initial element.\n");
 
 let
+    val test = teval (fromString "(Int [])") [];
+in
+    print("ERROR: EmptySeq exception should have been raised.\n")
+end handle EmptySeq => print ("INFO: Expected exception. Sequences must declare their sequence type like [plcType].\n");
+
+let
     val test = teval (fromString "match x with | 0 -> true | _ -> 1 end") [("x", IntT)]
 in
     print("ERROR: MatchResTypeDiff exception should have been raised.\n")
