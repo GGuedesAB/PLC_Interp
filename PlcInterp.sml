@@ -9,7 +9,7 @@ exception NotAFunc
 fun eval (ConI i) _ = IntV i
   | eval (ConB b) _ = BoolV b
   | eval (ESeq e) _ = SeqV []
-  | eval (Var v) (env:plcVal env) = (lookup env v)
+  | eval (Var v) (env:plcVal env) = let in lookup env v handle SymbolNotFound => raise SymbolNotFound end
   | eval (Item (index, exp)) (env:plcVal env) =
     let
       fun getElementI (index, []) = raise Impossible

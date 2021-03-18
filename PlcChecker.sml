@@ -22,7 +22,7 @@ fun teval (ConI _) _ = IntT
           SeqT t => SeqT t
         | _ => raise EmptySeq
     end
-  | teval (Var v) (env:plcType env) = lookup env v
+  | teval (Var v) (env:plcType env) = let in lookup env v handle SymbolNotFound => raise SymbolNotFound end
   | teval (List l) (env:plcType env) =
     let
       fun checkEachElement (x::[]) = (teval x env)::[]
@@ -63,17 +63,17 @@ fun teval (ConI _) _ = IntT
         | "hd" => let in
             case expType of
                 SeqT t => t
-              | _ => raise OpNonList
+              | _ => raise UnknownType
           end
         | "tl" => let in
             case expType of
                 SeqT t => SeqT t
-              | _ => raise OpNonList
+              | _ => raise UnknownType
           end
         | "ise" => let in
             case expType of
                 SeqT t => BoolT
-              | _ => raise OpNonList
+              | _ => raise UnknownType
           end
         | "print" => ListT []
         | _ => raise UnknownType
@@ -126,8 +126,9 @@ fun teval (ConI _) _ = IntT
       val exp2Type = teval exp2 env
     in
       case exp2Type of
-          FunT (typ1, exp2Type) => if typ1 = exp1Type then exp2Type else raise WrongRetType
-        | _ => raise CallTypeMisM
+          FunT (argType, resultType) => 
+            if exp1Type = argType then resultType else raise CallTypeMisM
+        | _ => raise NotFunc
     end
   | teval (Letrec(fName, argTyp, arg, funTyp, exp1, exp2)) (env:plcType env) =
     let
@@ -166,7 +167,7 @@ fun teval (ConI _) _ = IntT
                           else raise MatchResTypeDiff
                       | _ => raise UnknownType
                   end
-              | _ => raise UnknownType
+              | _ => raise NoMatchResults
           end
         | searchMatch _ _ = raise UnknownType
     in
