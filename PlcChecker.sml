@@ -88,7 +88,7 @@ fun teval (ConI _) _ = IntT
               | (BoolT, SeqT t2) => if t2 = BoolT then SeqT t2 else raise NotEqTypes
               | (ListT t, ListT []) => SeqT (ListT t)
               | (ListT t, SeqT t2) => if t2 = ListT t then SeqT t2 else raise NotEqTypes
-              | _ => raise OpNonList
+              | _ => raise UnknownType
           end
         | "+" => if exp1Type = IntT andalso exp2Type = IntT then IntT else raise UnknownType
         | "-" => if exp1Type = IntT andalso exp2Type = IntT then IntT else raise UnknownType
@@ -96,8 +96,8 @@ fun teval (ConI _) _ = IntT
         | "/" => if exp1Type = IntT andalso exp2Type = IntT then IntT else raise UnknownType
         | "<" => if exp1Type = IntT andalso exp2Type = IntT then BoolT else raise UnknownType
         | "<=" => if exp1Type = IntT andalso exp2Type = IntT then BoolT else raise UnknownType
-        | "=" => if exp1Type = exp2Type andalso (exp1Type = IntT orelse exp1Type = BoolT) then BoolT else raise UnknownType
-        | "!=" => if exp1Type = exp2Type andalso (exp1Type = IntT orelse exp1Type = BoolT) then BoolT else raise UnknownType
+        | "=" => if exp1Type = exp2Type andalso (exp1Type = IntT orelse exp1Type = BoolT) then BoolT else raise NotEqTypes
+        | "!=" => if exp1Type = exp2Type andalso (exp1Type = IntT orelse exp1Type = BoolT) then BoolT else raise NotEqTypes
         | ";" => exp2Type
         | _ => raise UnknownType
     end
@@ -121,8 +121,8 @@ fun teval (ConI _) _ = IntT
       val exp2Type = teval exp2 env
     in
       case exp2Type of
-          FunT (typ1, exp2Type) => if typ1 = exp1Type then exp2Type else raise UnknownType
-        | _ => raise NotFunc
+          FunT (typ1, exp2Type) => if typ1 = exp1Type then exp2Type else raise WrongRetType
+        | _ => raise CallTypeMisM
     end
   | teval (Letrec(fName, argTyp, arg, funTyp, exp1, exp2)) (env:plcType env) =
     let
@@ -131,7 +131,7 @@ fun teval (ConI _) _ = IntT
       val exp1Type = teval exp1 (recEnv :: argEnv :: env)
       val exp2Type = teval exp2 (recEnv :: env)
     in
-      if exp1Type = funTyp then exp2Type else raise UnknownType
+      if exp1Type = funTyp then exp2Type else raise WrongRetType
     end
   | teval (Match(exp1, matchList)) (env:plcType env) =
     let
