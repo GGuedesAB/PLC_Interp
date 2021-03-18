@@ -446,7 +446,3 @@ let
 in
   evaluateCases cases
 end;
-print ("INFO: Testing custom Checker cases\n");
-use "CheckTests.sml";
-print ("INFO: Testing custom Interpreter cases\n");
-use "InterpTests.sml";

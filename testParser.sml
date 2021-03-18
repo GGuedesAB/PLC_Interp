@@ -34,6 +34,10 @@ fromString "fun f(Int x, Int y) = x + y; f(1, 2)";
 fromFile ("example.plc");
 
 use "testParserCases.sml";
+print ("INFO: Testing custom Checker cases\n");
+use "CheckTests.sml";
+print ("INFO: Testing custom Interpreter cases\n");
+use "InterpTests.sml";
 print ("INFO: Finished test session. SUCCESS!\n");
 
 (* Try to add a systematic way of using the test cases in
