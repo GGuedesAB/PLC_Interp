@@ -100,10 +100,16 @@ in
 end handle WrongRetType => print ("INFO: Expected exception. Function return type does not agree with function body.\n");
 
 let
-    val test = teval (fromString "var x = 3; x(1)") []
+    val test = teval (fromString "fun f(Int n, Int m) = if n != 0 then 0 else m; f(true, 8)") [];
 in
     print("ERROR: CallTypeMisM exception should have been raised.\n")
-end handle CallTypeMisM => print ("INFO: Expected exception. Variable that is not a function is being called.\n");
+end handle CallTypeMisM => print ("INFO: Expected exception. Function real argument type is different from formal argument types.\n");
+
+let
+    val test = teval (fromString "var x = 3; x(1)") []
+in
+    print("ERROR: NotFunc exception should have been raised.\n")
+end handle NotFunc => print ("INFO: Expected exception. Variable that is not a function is being called.\n");
 
 let
     val test = teval (fromString "var x = 3; x[1]") []
