@@ -16,7 +16,12 @@ exception OpNonList
 
 fun teval (ConI _) _ = IntT
   | teval (ConB _) _ = BoolT
-  | teval (ESeq s) _ = s
+  | teval (ESeq s) _ =
+    let in
+      case s of
+          SeqT t => SeqT t
+        | _ => raise EmptySeq
+    end
   | teval (Var v) (env:plcType env) = lookup env v
   | teval (List l) (env:plcType env) =
     let
