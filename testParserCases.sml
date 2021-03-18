@@ -1,5 +1,3 @@
-use "Absyn.sml";
-
 val cases =
   (
     let val s = "0";
@@ -439,3 +437,16 @@ val cases =
         (s, e)
     end
   ) ];
+
+print ("INFO: Testing given cases\n");
+let
+  fun evaluateCases ((prog, ast)::[]) = (fromString prog) :: ast :: []
+    | evaluateCases ((prog, ast)::xs) = let val test = (fromString prog) :: ast :: [] in (evaluateCases xs) end
+    | evaluateCases _ = raise Empty
+in
+  evaluateCases cases
+end;
+print ("INFO: Testing custom Checker cases\n");
+use "CheckTests.sml";
+print ("INFO: Testing custom Interpreter cases\n");
+use "InterpTests.sml";
